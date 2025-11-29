@@ -1,0 +1,187 @@
+# ============================================
+# MENTAL HEALTH COUNSELOR PLATFORM
+# Root .gitignore for Full Stack Project
+# ============================================
+
+# ==================== BACKEND (Python/FastAPI) ====================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+backend/venv/
+backend/env/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+.venv
+venv/
+
+# Backend Environment Variables
+backend/.env
+backend/.env.local
+backend/.env.*.local
+
+# Model Weights (if large - use Git LFS instead)
+backend/weights/*.h5
+backend/weights/*.pkl
+backend/weights/*.bin
+
+# Jupyter Notebooks
+backend/*.ipynb_checkpoints
+backend/.ipynb_checkpoints
+
+# PyCharm
+backend/.idea/
+*.iml
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ==================== FRONTEND (React/Vite) ====================
+
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Testing
+frontend/coverage/
+
+# Production Build
+frontend/dist/
+frontend/build/
+
+# Frontend Environment Variables
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Editor directories and files
+frontend/.vscode/*
+!frontend/.vscode/extensions.json
+frontend/.idea
+frontend/*.suo
+frontend/*.ntvs*
+frontend/*.njsproj
+frontend/*.sln
+frontend/*.sw?
+
+# Vite
+frontend/.vite
+
+# ==================== COMMON ====================
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Temporary Files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Secrets
+*.pem
+*.key
+*.cert
+secrets/
+.secrets/
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# Documentation builds
+docs/_build/
+site/
+
+# Backup files
+*.backup
+*.old
+
+# ==================== PROJECT SPECIFIC ====================
+
+# MongoDB Data (if running locally)
+data/
+mongodb_data/
+
+# Session Storage
+sessions/
+
+# Uploaded Files
+uploads/
+user_uploads/
+
+# Screenshots/Test Images
+screenshots/
+test_images/
+
+# Local Config
+local_settings.py
+local_config.json

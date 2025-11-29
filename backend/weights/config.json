@@ -1,0 +1,15 @@
+{
+    "max_sequence_length": 100,
+    "embedding_dim": 300,
+    "min_word_frequency": 2,
+    "emotion_labels": {
+        "0": "sadness",
+        "1": "joy",
+        "2": "love",
+        "3": "anger",
+        "4": "fear",
+        "5": "surprise"
+    },
+    "num_classes": 6,
+    "vocab_size": 6421
+}

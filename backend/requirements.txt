@@ -1,0 +1,51 @@
+# FastAPI and Server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+websockets==12.0
+
+# Computer Vision
+opencv-python==4.9.0.80
+Pillow==10.2.0
+
+# OpenAI
+openai==1.10.0
+
+# Utilities
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+
+
+# Core Deep Learning Frameworks
+tensorflow==2.18.0
+keras==3.6.0
+
+# Data Processing and Analysis
+numpy==1.26.4
+pandas==2.2.0
+
+# Natural Language Processing
+nltk==3.8.1
+gensim==4.3.3
+
+# Machine Learning and Metrics
+scikit-learn==1.5.0
+
+# Visualization
+matplotlib==3.9.0
+seaborn==0.13.0
+
+# Utilities
+pickle-mixin==1.0.2
+tqdm==4.66.1
+
+# Optional but recommended
+jupyter==1.0.0
+notebook==7.0.0
+ipykernel==6.29.0
+# For GPU support (optional - if you have NVIDIA GPU)
+# tensorflow-gpu==2.15.0
+
+
