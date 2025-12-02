@@ -5,10 +5,10 @@ import Webcam from 'react-webcam';
 import EmotionBadge from '../../components/shared/EmotionBadge';
 import {
   PaperAirplaneIcon,
-  CameraIcon,
   VideoCameraIcon,
   XMarkIcon,
   ChatBubbleLeftRightIcon,
+  MicrophoneIcon,
 } from '@heroicons/react/24/outline';
 import type { ChatResponse } from '../../types';
 
@@ -20,6 +20,14 @@ interface Message {
   timestamp: Date;
 }
 
+// Extend Window interface for speech recognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -27,15 +35,129 @@ const Chat: React.FC = () => {
   const [sessionId] = useState(`session-${Date.now()}`);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [lastEmotion, setLastEmotion] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  
   const webcamRef = useRef<Webcam>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      console.warn('Speech recognition not supported in this browser');
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      console.log('Speech recognition started');
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' ';
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      // Update input with final transcript
+      if (finalTranscript) {
+        setInput((prev) => prev + finalTranscript);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      
+      if (event.error === 'not-allowed') {
+        alert('Microphone access denied. Please enable microphone permissions.');
+      } else if (event.error === 'no-speech') {
+        console.log('No speech detected, restarting...');
+        // Auto-restart if no speech detected
+        if (isListening) {
+          setTimeout(() => {
+            try {
+              recognition.start();
+            } catch (e) {
+              console.log('Recognition already started');
+            }
+          }, 100);
+        }
+      }
+    };
+
+    recognition.onend = () => {
+      console.log('Speech recognition ended');
+      setIsListening(false);
+      
+      // Auto-restart if still supposed to be listening
+      if (recognitionRef.current && isListening) {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.log('Could not restart recognition');
+        }
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const toggleSpeechRecognition = () => {
+    if (!speechSupported) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    if (!recognitionRef.current) {
+      console.error('Speech recognition not initialized');
+      return;
+    }
+
+    if (isListening) {
+      // Stop listening
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      // Start listening
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        // If already started, just update state
+        setIsListening(true);
+      }
+    }
   };
 
   const captureFrame = async (): Promise<File | undefined> => {
@@ -51,6 +173,12 @@ const Chat: React.FC = () => {
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
+
+    // Stop speech recognition when sending
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
 
     const userMessage: Message = {
       role: 'user',
@@ -110,13 +238,13 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl h-[calc(100vh-12rem)] flex flex-col">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="bg-white rounded-2xl shadow-xl h-[calc(100vh-8rem)] flex flex-col relative">
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary-600 to-primary-500 p-6 rounded-t-2xl">
+          <div className="bg-gradient-to-r from-primary-600 to-primary-500 p-4 rounded-t-2xl flex-shrink-0">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold text-white">AI Therapy Chat</h2>
@@ -157,12 +285,12 @@ const Chat: React.FC = () => {
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {messages.length === 0 && (
-              <div className="text-center py-12">
-                <ChatBubbleLeftRightIcon className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <div className="text-center py-16">
+                <ChatBubbleLeftRightIcon className="h-20 w-20 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">
                   Start a conversation
                 </h3>
-                <p className="text-gray-500">
+                <p className="text-gray-500 text-lg">
                   Share how you're feeling, and I'll provide support and guidance.
                 </p>
               </div>
@@ -182,7 +310,7 @@ const Chat: React.FC = () => {
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <p className="whitespace-pre-wrap text-base">{message.content}</p>
                   {message.emotion && (
                     <div className="mt-2 flex items-center gap-2">
                       <span className="text-xs opacity-75">Detected emotion:</span>
@@ -222,36 +350,75 @@ const Chat: React.FC = () => {
 
           {/* Camera Preview */}
           {cameraEnabled && (
-            <div className="px-6 pb-4">
-              <div className="relative inline-block rounded-lg overflow-hidden border-4 border-primary-500">
+            <div className="absolute bottom-40 right-6 z-10">
+              <div className="relative rounded-lg overflow-hidden border-4 border-primary-500 shadow-2xl bg-black">
                 <Webcam
                   ref={webcamRef}
                   audio={false}
                   screenshotFormat="image/jpeg"
-                  className="w-48 h-36"
+                  className="w-48 h-36 object-cover"
+                  videoConstraints={{
+                    width: 640,
+                    height: 480,
+                    facingMode: 'user',
+                  }}
                 />
                 <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium flex items-center">
                   <span className="animate-pulse mr-1">●</span> LIVE
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                  <p className="text-white text-xs font-medium">Facial Emotion Detection Active</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Input Area */}
-          <div className="border-t border-gray-200 p-6">
+          {/* Input Area with Microphone */}
+          <div className="border-t border-gray-200 p-4 bg-white rounded-b-2xl flex-shrink-0">
+            {/* Listening Indicator */}
+            {isListening && (
+              <div className="mb-3 flex items-center gap-2 text-red-600 animate-pulse">
+                <div className="flex space-x-1">
+                  <div className="w-1 h-4 bg-red-600 rounded animate-pulse"></div>
+                  <div className="w-1 h-6 bg-red-600 rounded animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-1 h-5 bg-red-600 rounded animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-1 h-7 bg-red-600 rounded animate-pulse" style={{ animationDelay: '0.3s' }}></div>
+                  <div className="w-1 h-4 bg-red-600 rounded animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                </div>
+                <span className="text-sm font-medium">Listening... (speak now)</span>
+              </div>
+            )}
+
             <div className="flex gap-4">
+              {/* Microphone Button */}
+              <button
+                onClick={toggleSpeechRecognition}
+                disabled={!speechSupported}
+                className={`px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                  isListening
+                    ? 'bg-red-600 text-white hover:bg-red-700 animate-pulse'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title={speechSupported ? 'Click to start/stop voice input' : 'Speech recognition not supported'}
+              >
+                <MicrophoneIcon className="h-6 w-6" />
+              </button>
+
+              {/* Text Input */}
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your message here... (Press Enter to send)"
-                className="flex-1 resize-none border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Type your message here or use the microphone... (Press Enter to send)"
+                className="flex-1 resize-none border-2 border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                 rows={3}
               />
+
+              {/* Send Button */}
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || loading}
-                className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium"
+                className="px-8 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium text-base"
               >
                 <PaperAirplaneIcon className="h-5 w-5" />
                 Send
