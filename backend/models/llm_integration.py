@@ -80,7 +80,7 @@ Remember: You're here to listen, validate, and gently guide - not to solve or di
             temperature: Response randomness (0.7 for balanced creativity)
             max_tokens: Maximum response length
         """
-        self.client = AsyncOpenAI(api_key=api_key,timeout=30.0 )
+        self.client = AsyncOpenAI(api_key=api_key)
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
